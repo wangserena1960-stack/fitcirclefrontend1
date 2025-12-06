@@ -454,6 +454,16 @@
             <div class="tab" onclick="openScreen('admin-leaves')">請假</div>
         </div>
 
+        <!-- Tabs (Coach) -->
+        <div class="tabs" id="coach-tabs" style="display: none;">
+            <div class="tab active" onclick="openScreen('coach-dashboard')">總覽</div>
+            <div class="tab" onclick="openScreen('coach-classes')">課程</div>
+            <div class="tab" onclick="openScreen('coach-students')">學生</div>
+            <div class="tab" onclick="openScreen('coach-leaves')">請假</div>
+            <div class="tab" onclick="openScreen('coach-payments')">收入</div>
+            <div class="tab" onclick="openScreen('coach-smartchat')">Smart Chat</div>
+        </div>
+
         <!-- Screens -->
         <!-- Admin Dashboard -->
         <div id="admin-dashboard" class="screen active">
@@ -560,12 +570,147 @@
             </div>
         </div>
 
-        <!-- Coach Dashboard (Demo) -->
+        <!-- Coach Dashboard -->
         <div id="coach-dashboard" class="screen">
-            <h2>教練端 Dashboard</h2>
+            <h2>教練端總覽</h2>
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <h3>我的課程</h3>
+                    <div class="value" id="coach-stat-classes">-</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>我的學生</h3>
+                    <div class="value" id="coach-stat-students">-</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>待處理請假</h3>
+                    <div class="value" id="coach-stat-pending-leaves">-</div>
+                </div>
+                <div class="dashboard-card">
+                    <h3>總收入</h3>
+                    <div class="value" id="coach-stat-total-payments">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coach Classes -->
+        <div id="coach-classes" class="screen">
+            <div class="list-header">
+                <h3>我的課程</h3>
+                <button class="btn-primary" onclick="openCreateClassModal()">新增課程</button>
+            </div>
+            <div class="table-container">
+                <table id="coach-classes-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>課程名稱</th>
+                            <th>地點</th>
+                            <th>時間</th>
+                            <th>容量</th>
+                            <th>一期價格</th>
+                            <th>一期堂數</th>
+                            <th>單堂價</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coach-classes-tbody">
+                        <tr><td colspan="8" class="loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Coach Students -->
+        <div id="coach-students" class="screen">
+            <div class="list-header">
+                <h3>我的學生</h3>
+            </div>
+            <div class="table-container">
+                <table id="coach-students-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>姓名</th>
+                            <th>Email</th>
+                            <th>電話</th>
+                            <th>LINE ID</th>
+                            <th>報名課程</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coach-students-tbody">
+                        <tr><td colspan="6" class="loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Coach Leaves -->
+        <div id="coach-leaves" class="screen">
+            <div class="list-header">
+                <h3>請假管理</h3>
+            </div>
+            <div class="table-container">
+                <table id="coach-leaves-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>學生</th>
+                            <th>課程</th>
+                            <th>類型</th>
+                            <th>原上課日</th>
+                            <th>新上課日</th>
+                            <th>狀態</th>
+                            <th>理由</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coach-leaves-tbody">
+                        <tr><td colspan="9" class="loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Coach Payments -->
+        <div id="coach-payments" class="screen">
+            <div class="list-header">
+                <h3>收入管理</h3>
+            </div>
+            <div class="table-container">
+                <table id="coach-payments-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>學生</th>
+                            <th>課程</th>
+                            <th>金額</th>
+                            <th>收款日期</th>
+                            <th>付款管道</th>
+                            <th>備註</th>
+                        </tr>
+                    </thead>
+                    <tbody id="coach-payments-tbody">
+                        <tr><td colspan="7" class="loading">載入中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Coach Smart Chat -->
+        <div id="coach-smartchat" class="screen">
+            <h2>Smart Chat</h2>
             <p style="padding: 20px; background: white; border-radius: 8px; margin-top: 20px;">
-                此功能為 Demo 版本，未來將串接完整 API。
+                此功能為未來擴充功能，將整合 LINE Bot 自動擷取對話中的請假/改課申請。
             </p>
+            <div style="padding: 20px; background: white; border-radius: 8px; margin-top: 20px;">
+                <h3>功能預覽</h3>
+                <ul style="margin-top: 10px; line-height: 2;">
+                    <li>自動從 LINE 對話中識別請假申請</li>
+                    <li>自動從 LINE 對話中識別改課申請</li>
+                    <li>自動建立請假/改課記錄</li>
+                    <li>教練可在這裡審核所有申請</li>
+                </ul>
+            </div>
         </div>
 
         <!-- Student Home (Demo) -->
@@ -636,6 +781,74 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal('create-student-modal')">取消</button>
+                    <button type="submit" class="btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Class Modal -->
+    <div id="create-class-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>新增課程</h3>
+                <button class="close-btn" onclick="closeModal('create-class-modal')">&times;</button>
+            </div>
+            <form class="modal-form" id="create-class-form" onsubmit="handleCreateClass(event)">
+                <div class="form-group">
+                    <label>教練 *</label>
+                    <select name="coach_id" id="class-coach-select" required>
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>課程名稱 *</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>地點</label>
+                    <input type="text" name="location">
+                </div>
+                <div class="form-group">
+                    <label>上課時間（例如：每週一 19:30–20:30）</label>
+                    <input type="text" name="schedule_text">
+                </div>
+                <div class="form-group">
+                    <label>容量</label>
+                    <input type="number" name="capacity" min="1">
+                </div>
+                <div class="form-group">
+                    <label>一期總金額</label>
+                    <input type="number" name="term_price" min="0">
+                </div>
+                <div class="form-group">
+                    <label>一期堂數</label>
+                    <input type="number" name="term_classes" min="1">
+                </div>
+                <div class="form-group">
+                    <label>單堂價</label>
+                    <input type="number" name="dropin_price" min="0">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_no_leave">
+                        完全不允許請假
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_allow_delay" checked>
+                        允許延期/補課
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_allow_dropin" checked>
+                        允許單堂參加
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('create-class-modal')">取消</button>
                     <button type="submit" class="btn-primary">新增</button>
                 </div>
             </form>
