@@ -1,7 +1,7 @@
 // FitCircle SmartChat MVP - Frontend JavaScript
 // 請將 API_BASE 替換為您的 Cloudflare Worker URL
 
-const API_BASE = 'YOUR_WORKER_URL_HERE'; // 例如: https://fitcircle-api.youraccount.workers.dev
+const API_BASE = 'fircircle-backend1.wangserena1960.workers.dev'; // 例如: https://fitcircle-api.youraccount.workers.dev
 
 // Global State
 let currentUser = null;
