@@ -1,10 +1,10 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FitCircle SmartChat MVP</title>
-    <style>
+    <st<!DOCTYPE html>
+<html lang="zh-TW">yle>
         * {
             margin: 0;
             padding: 0;
@@ -611,10 +611,11 @@
                             <th>一期價格</th>
                             <th>一期堂數</th>
                             <th>單堂價</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="coach-classes-tbody">
-                        <tr><td colspan="8" class="loading">載入中...</td></tr>
+                        <tr><td colspan="9" class="loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -624,6 +625,10 @@
         <div id="coach-students" class="screen">
             <div class="list-header">
                 <h3>我的學生</h3>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="student-search" placeholder="搜尋學生（姓名、Email、電話）..." 
+                       onkeyup="filterStudents()" style="width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
             </div>
             <div class="table-container">
                 <table id="coach-students-table">
@@ -635,10 +640,11 @@
                             <th>電話</th>
                             <th>LINE ID</th>
                             <th>報名課程</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody id="coach-students-tbody">
-                        <tr><td colspan="6" class="loading">載入中...</td></tr>
+                        <tr><td colspan="7" class="loading">載入中...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -648,6 +654,14 @@
         <div id="coach-leaves" class="screen">
             <div class="list-header">
                 <h3>請假管理</h3>
+                <div style="display: flex; gap: 10px;">
+                    <select id="leave-filter-status" onchange="loadCoachLeaves()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="">全部狀態</option>
+                        <option value="pending">待處理</option>
+                        <option value="accepted">已接受</option>
+                        <option value="rejected">已拒絕</option>
+                    </select>
+                </div>
             </div>
             <div class="table-container">
                 <table id="coach-leaves-table">
@@ -675,6 +689,11 @@
         <div id="coach-payments" class="screen">
             <div class="list-header">
                 <h3>收入管理</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="date" id="payment-filter-start" onchange="loadCoachPayments()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    <input type="date" id="payment-filter-end" onchange="loadCoachPayments()" style="padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                    <button class="btn-secondary" onclick="loadCoachPayments()">清除篩選</button>
+                </div>
             </div>
             <div class="table-container">
                 <table id="coach-payments-table">
@@ -782,6 +801,75 @@
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeModal('create-student-modal')">取消</button>
                     <button type="submit" class="btn-primary">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Class Modal -->
+    <div id="edit-class-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>編輯課程</h3>
+                <button class="close-btn" onclick="closeModal('edit-class-modal')">&times;</button>
+            </div>
+            <form class="modal-form" id="edit-class-form" onsubmit="handleUpdateClass(event)">
+                <input type="hidden" name="class_id" id="edit-class-id">
+                <div class="form-group">
+                    <label>教練 *</label>
+                    <select name="coach_id" id="edit-class-coach-select" required>
+                        <option value="">載入中...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>課程名稱 *</label>
+                    <input type="text" name="name" id="edit-class-name" required>
+                </div>
+                <div class="form-group">
+                    <label>地點</label>
+                    <input type="text" name="location" id="edit-class-location">
+                </div>
+                <div class="form-group">
+                    <label>上課時間（例如：每週一 19:30–20:30）</label>
+                    <input type="text" name="schedule_text" id="edit-class-schedule">
+                </div>
+                <div class="form-group">
+                    <label>容量</label>
+                    <input type="number" name="capacity" id="edit-class-capacity" min="1">
+                </div>
+                <div class="form-group">
+                    <label>一期總金額</label>
+                    <input type="number" name="term_price" id="edit-class-term-price" min="0">
+                </div>
+                <div class="form-group">
+                    <label>一期堂數</label>
+                    <input type="number" name="term_classes" id="edit-class-term-classes" min="1">
+                </div>
+                <div class="form-group">
+                    <label>單堂價</label>
+                    <input type="number" name="dropin_price" id="edit-class-dropin-price" min="0">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_no_leave" id="edit-class-rule-no-leave">
+                        完全不允許請假
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_allow_delay" id="edit-class-rule-allow-delay">
+                        允許延期/補課
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" name="rule_allow_dropin" id="edit-class-rule-allow-dropin">
+                        允許單堂參加
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeModal('edit-class-modal')">取消</button>
+                    <button type="submit" class="btn-primary">更新</button>
                 </div>
             </form>
         </div>
