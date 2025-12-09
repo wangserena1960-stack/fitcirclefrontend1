@@ -1,7 +1,7 @@
 // FitCircle SmartChat MVP - Frontend JavaScript
 // 請將 API_BASE 替換為您的 Cloudflare Worker URL
 
-const API_BASE = 'https://fitcircle-backend1.wangserena1960.workers.dev'; // 例如: https://fitcircle-api.youraccount.workers.dev
+const API_BASE = 'https://fitcircle-backend1.wangserena1960.workers.dev'; // Cloudflare Worker URL
 
 // 檢查 API_BASE 是否已設定
 if (API_BASE === 'YOUR_WORKER_URL_HERE' || !API_BASE || API_BASE.trim() === '') {
@@ -14,9 +14,6 @@ let currentRole = 'admin';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ DOM Content Loaded');
-    console.log('API_BASE:', API_BASE);
-    
     // Check if already logged in
     const token = localStorage.getItem('fitcircle_token');
     if (token) {
@@ -29,27 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Login form handler
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-        console.log('✅ Login form event listener attached');
-    } else {
-        console.error('❌ Login form not found!');
-    }
+    document.getElementById('login-form').addEventListener('submit', handleLogin);
 });
 
 // Login Handler
 async function handleLogin(e) {
-    console.log('🔐 Login button clicked');
     e.preventDefault();
-    
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
-
-    console.log('Email:', email);
-    console.log('API_BASE:', API_BASE);
 
     errorDiv.textContent = '';
     loginBtn.disabled = true;
@@ -61,18 +47,13 @@ async function handleLogin(e) {
             throw new Error('API URL 尚未設定！請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Cloudflare Worker URL');
         }
 
-        const loginUrl = `${API_BASE}/api/login`;
-        console.log('🌐 Calling login API:', loginUrl);
-
-        const response = await fetch(loginUrl, {
+        const response = await fetch(`${API_BASE}/api/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ email, password }),
         });
-
-        console.log('📡 Response status:', response.status);
 
         // 檢查網路錯誤
         if (!response.ok) {
@@ -81,7 +62,6 @@ async function handleLogin(e) {
         }
 
         const data = await response.json();
-        console.log('✅ Login successful:', data);
 
         // Store token and user
         window._fitcircleToken = data.token;
@@ -90,16 +70,14 @@ async function handleLogin(e) {
         localStorage.setItem('fitcircle_user', JSON.stringify(data.user));
 
         // Show app
-        console.log('🎉 Showing app...');
         showApp();
     } catch (error) {
         // 顯示更詳細的錯誤訊息
-        console.error('❌ Login error:', error);
         let errorMessage = error.message;
         
         // 如果是網路錯誤
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('fetch')) {
-            errorMessage = '無法連接到伺服器。請檢查：\n1. API URL 是否正確：' + API_BASE + '\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常\n\n請在瀏覽器開啟以下 URL 測試：\n' + API_BASE;
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMessage = '無法連接到伺服器。請檢查：\n1. API URL 是否正確設定\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常';
         }
         
         // 如果是 URL 格式錯誤
@@ -108,7 +86,7 @@ async function handleLogin(e) {
         }
         
         errorDiv.textContent = errorMessage;
-        errorDiv.style.whiteSpace = 'pre-line'; // 允許換行顯示
+        console.error('登入錯誤:', error);
     } finally {
         loginBtn.disabled = false;
         loginBtn.textContent = '登入';
@@ -209,11 +187,6 @@ function openScreen(screenId) {
 
 // API Helper
 async function apiCall(endpoint, options = {}) {
-    // 檢查 API_BASE 是否已設定
-    if (API_BASE === 'YOUR_WORKER_URL_HERE' || !API_BASE || API_BASE.trim() === '') {
-        throw new Error('API URL 尚未設定！請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Cloudflare Worker URL（例如：https://fitcircle-backend1.wangserena1960.workers.dev）');
-    }
-
     const url = `${API_BASE}${endpoint}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -224,31 +197,17 @@ async function apiCall(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${window._fitcircleToken}`;
     }
 
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers,
-        });
+    const response = await fetch(url, {
+        ...options,
+        headers,
+    });
 
-        // 檢查網路錯誤
-        if (!response.ok) {
-            let errorData;
-            try {
-                errorData = await response.json();
-            } catch (e) {
-                errorData = { error: `HTTP ${response.status} 錯誤` };
-            }
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        // 提供更詳細的錯誤訊息
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            throw new Error(`無法連接到伺服器。請檢查：\n1. API URL 是否正確：${API_BASE}\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常`);
-        }
-        throw error;
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(error.error || `HTTP ${response.status}`);
     }
+
+    return response.json();
 }
 
 // Admin Dashboard
@@ -503,7 +462,7 @@ async function loadCoachClasses() {
         const classes = await apiCall('/api/classes');
         
         if (classes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">尚無課程資料</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">尚無課程資料</td></tr>';
             return;
         }
 
@@ -517,54 +476,123 @@ async function loadCoachClasses() {
                 <td>${cls.term_price ? `NT$ ${cls.term_price.toLocaleString()}` : '-'}</td>
                 <td>${cls.term_classes || '-'}</td>
                 <td>${cls.dropin_price ? `NT$ ${cls.dropin_price.toLocaleString()}` : '-'}</td>
+                <td>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;" 
+                            onclick="openEditClassModal(${cls.id})">編輯</button>
+                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="deleteClass(${cls.id}, '${cls.name || ''}')">刪除</button>
+                </td>
             </tr>
         `).join('');
     } catch (error) {
         console.error('Failed to load coach classes:', error);
-        let errorMessage = error.message;
-        
-        // 如果是 API URL 未設定，顯示更清楚的訊息
-        if (errorMessage.includes('API URL 尚未設定')) {
-            errorMessage = '⚠️ API URL 尚未設定！\n請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Worker URL';
-        }
-        
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="color: #e74c3c; white-space: pre-line;">載入失敗: ' + errorMessage + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">載入失敗: ' + error.message + '</td></tr>';
     }
 }
 
 // Coach Students
+let allStudentsData = []; // 儲存所有學生資料供搜尋使用
+
 async function loadCoachStudents() {
     const tbody = document.getElementById('coach-students-tbody');
-    tbody.innerHTML = '<tr><td colspan="6" class="loading">載入中...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="loading">載入中...</td></tr>';
 
     try {
         const students = await apiCall('/api/admin/students');
         const classes = await apiCall('/api/classes');
         
+        allStudentsData = students; // 儲存供搜尋使用
+        
         if (students.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">尚無學生資料</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">尚無學生資料</td></tr>';
             return;
         }
 
         // 簡單顯示所有學生（未來可以根據課程過濾）
-        tbody.innerHTML = students.map(student => {
-            // 找出學生報名的課程（簡化版，未來可以從 enrollments 表查詢）
-            const studentClasses = classes.filter(c => true).map(c => c.name).join(', ') || '-';
-            
-            return `
-                <tr>
-                    <td>${student.id}</td>
-                    <td>${student.name || '-'}</td>
-                    <td>${student.email || '-'}</td>
-                    <td>${student.phone || '-'}</td>
-                    <td>${student.line_id || '-'}</td>
-                    <td>${studentClasses}</td>
-                </tr>
-            `;
-        }).join('');
+        displayStudents(students, classes);
     } catch (error) {
         console.error('Failed to load coach students:', error);
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">載入失敗: ' + error.message + '</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">載入失敗: ' + error.message + '</td></tr>';
+    }
+}
+
+function displayStudents(students, classes) {
+    const tbody = document.getElementById('coach-students-tbody');
+    tbody.innerHTML = students.map(student => {
+        // 找出學生報名的課程（簡化版，未來可以從 enrollments 表查詢）
+        const studentClasses = classes.filter(c => true).map(c => c.name).join(', ') || '-';
+        
+        return `
+            <tr>
+                <td>${student.id}</td>
+                <td>${student.name || '-'}</td>
+                <td>${student.email || '-'}</td>
+                <td>${student.phone || '-'}</td>
+                <td>${student.line_id || '-'}</td>
+                <td>${studentClasses}</td>
+                <td>
+                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px;" 
+                            onclick="viewStudentDetail(${student.id})">詳情</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function filterStudents() {
+    const searchTerm = document.getElementById('student-search').value.toLowerCase();
+    if (!searchTerm) {
+        // 如果搜尋框為空，重新載入所有學生
+        loadCoachStudents();
+        return;
+    }
+    
+    const filtered = allStudentsData.filter(student => 
+        (student.name && student.name.toLowerCase().includes(searchTerm)) ||
+        (student.email && student.email.toLowerCase().includes(searchTerm)) ||
+        (student.phone && student.phone.includes(searchTerm))
+    );
+    
+    // 重新取得課程資料以顯示
+    apiCall('/api/classes').then(classes => {
+        displayStudents(filtered, classes);
+    }).catch(() => {
+        displayStudents(filtered, []);
+    });
+}
+
+async function viewStudentDetail(studentId) {
+    try {
+        const student = allStudentsData.find(s => s.id === studentId);
+        if (!student) {
+            alert('找不到學生資料');
+            return;
+        }
+        
+        // 取得學生的付款紀錄
+        const payments = await apiCall(`/api/students/${studentId}/payments`);
+        const leaves = await apiCall('/api/leave-requests');
+        const studentLeaves = leaves.filter(l => l.student_id === studentId);
+        
+        // 顯示學生詳情
+        const detail = `
+學生詳情
+========
+姓名：${student.name || '-'}
+Email：${student.email || '-'}
+電話：${student.phone || '-'}
+LINE ID：${student.line_id || '-'}
+
+付款紀錄（共 ${payments.length} 筆）：
+${payments.length > 0 ? payments.map(p => `- ${p.paid_at} | NT$ ${p.amount.toLocaleString()} | ${p.class_name || '一般付款'}`).join('\n') : '尚無付款紀錄'}
+
+請假紀錄（共 ${studentLeaves.length} 筆）：
+${studentLeaves.length > 0 ? studentLeaves.map(l => `- ${l.lesson_date} | ${l.type === 'leave' ? '請假' : '改期'} | ${l.status}`).join('\n') : '尚無請假紀錄'}
+        `;
+        
+        alert(detail);
+    } catch (error) {
+        alert('載入學生詳情失敗: ' + error.message);
     }
 }
 
@@ -574,7 +602,9 @@ async function loadCoachLeaves() {
     tbody.innerHTML = '<tr><td colspan="9" class="loading">載入中...</td></tr>';
 
     try {
-        const leaves = await apiCall('/api/leave-requests?status=pending');
+        const statusFilter = document.getElementById('leave-filter-status')?.value || '';
+        const endpoint = statusFilter ? `/api/leave-requests?status=${statusFilter}` : '/api/leave-requests';
+        const leaves = await apiCall(endpoint);
         
         if (leaves.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">尚無待處理請假</td></tr>';
@@ -596,10 +626,14 @@ async function loadCoachLeaves() {
                 </td>
                 <td>${leave.reason_student || '-'}</td>
                 <td>
-                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;" 
-                            onclick="handleCoachLeaveDecision(${leave.id}, 'accept')">接受</button>
-                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
-                            onclick="handleCoachLeaveDecision(${leave.id}, 'reject')">拒絕</button>
+                    ${leave.status === 'pending' ? `
+                        <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;" 
+                                onclick="handleCoachLeaveDecision(${leave.id}, 'accept')">接受</button>
+                        <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" 
+                                onclick="handleCoachLeaveDecision(${leave.id}, 'reject')">拒絕</button>
+                    ` : `
+                        <span style="color: #666; font-size: 12px;">${leave.reason_coach || '-'}</span>
+                    `}
                 </td>
             </tr>
         `).join('');
@@ -654,6 +688,21 @@ async function loadCoachPayments() {
             } catch (e) {
                 // 忽略個別錯誤
             }
+        }
+
+        // 日期過濾
+        const startDate = document.getElementById('payment-filter-start')?.value;
+        const endDate = document.getElementById('payment-filter-end')?.value;
+        
+        if (startDate || endDate) {
+            allPayments = allPayments.filter(p => {
+                const paidDate = new Date(p.paid_at);
+                if (startDate && paidDate < new Date(startDate)) return false;
+                if (endDate && paidDate > new Date(endDate)) return false;
+                return true;
+            });
+            // 重新計算總計
+            totalAmount = allPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
         }
 
         // 按日期排序（最新的在前）
@@ -755,15 +804,108 @@ async function handleCreateClass(e) {
     }
 }
 
+// Edit Class
+async function openEditClassModal(classId) {
+    try {
+        const classes = await apiCall('/api/classes');
+        const classData = classes.find(c => c.id === classId);
+        
+        if (!classData) {
+            alert('找不到課程資料');
+            return;
+        }
+        
+        // 載入教練列表
+        await loadCoachesForClassModal();
+        
+        // 填入表單
+        document.getElementById('edit-class-id').value = classData.id;
+        document.getElementById('edit-class-coach-select').value = classData.coach_id;
+        document.getElementById('edit-class-name').value = classData.name || '';
+        document.getElementById('edit-class-location').value = classData.location || '';
+        document.getElementById('edit-class-schedule').value = classData.schedule_text || '';
+        document.getElementById('edit-class-capacity').value = classData.capacity || '';
+        document.getElementById('edit-class-term-price').value = classData.term_price || '';
+        document.getElementById('edit-class-term-classes').value = classData.term_classes || '';
+        document.getElementById('edit-class-dropin-price').value = classData.dropin_price || '';
+        document.getElementById('edit-class-rule-no-leave').checked = classData.rule_no_leave === true || classData.rule_no_leave === 1;
+        document.getElementById('edit-class-rule-allow-delay').checked = classData.rule_allow_delay === true || classData.rule_allow_delay === 1;
+        document.getElementById('edit-class-rule-allow-dropin').checked = classData.rule_allow_dropin === true || classData.rule_allow_dropin === 1;
+        
+        document.getElementById('edit-class-modal').classList.add('active');
+    } catch (error) {
+        alert('載入課程資料失敗: ' + error.message);
+    }
+}
+
+async function handleUpdateClass(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const classId = parseInt(formData.get('class_id'));
+    
+    const data = {
+        coach_id: parseInt(formData.get('coach_id')),
+        name: formData.get('name'),
+        location: formData.get('location') || null,
+        schedule_text: formData.get('schedule_text') || null,
+        capacity: formData.get('capacity') ? parseInt(formData.get('capacity')) : null,
+        term_price: formData.get('term_price') ? parseInt(formData.get('term_price')) : null,
+        term_classes: formData.get('term_classes') ? parseInt(formData.get('term_classes')) : null,
+        dropin_price: formData.get('dropin_price') ? parseInt(formData.get('dropin_price')) : null,
+        rule_no_leave: formData.get('rule_no_leave') === 'on' ? true : false,
+        rule_allow_delay: formData.get('rule_allow_delay') === 'on' ? true : false,
+        rule_allow_dropin: formData.get('rule_allow_dropin') === 'on' ? true : false,
+    };
+
+    try {
+        await apiCall(`/api/classes/${classId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+
+        alert('課程已更新');
+        closeModal('edit-class-modal');
+        loadCoachClasses();
+        loadCoachDashboard();
+    } catch (error) {
+        alert('更新課程失敗: ' + error.message);
+    }
+}
+
+async function deleteClass(classId, className) {
+    if (!confirm(`確定要刪除課程「${className}」嗎？此操作無法復原。`)) {
+        return;
+    }
+    
+    try {
+        await apiCall(`/api/classes/${classId}`, {
+            method: 'DELETE',
+        });
+
+        alert('課程已刪除');
+        loadCoachClasses();
+        loadCoachDashboard();
+    } catch (error) {
+        alert('刪除課程失敗: ' + error.message);
+    }
+}
+
 // Make functions available globally
 window.switchRole = switchRole;
 window.openScreen = openScreen;
 window.openCreateCoachModal = openCreateCoachModal;
 window.openCreateStudentModal = openCreateStudentModal;
 window.openCreateClassModal = openCreateClassModal;
+window.openEditClassModal = openEditClassModal;
 window.closeModal = closeModal;
 window.handleCreateCoach = handleCreateCoach;
 window.handleCreateStudent = handleCreateStudent;
 window.handleCreateClass = handleCreateClass;
+window.handleUpdateClass = handleUpdateClass;
+window.deleteClass = deleteClass;
 window.handleLeaveDecision = handleLeaveDecision;
 window.handleCoachLeaveDecision = handleCoachLeaveDecision;
+window.viewStudentDetail = viewStudentDetail;
+window.filterStudents = filterStudents;
+
