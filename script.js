@@ -1,7 +1,7 @@
 // FitCircle SmartChat MVP - Frontend JavaScript
 // 請將 API_BASE 替換為您的 Cloudflare Worker URL
 
-const API_BASE = '   const API_BASE = 'https://fitcircle-backend1.wangserena1960.workers.dev';'; // 例如: https://fitcircle-api.youraccount.workers.dev
+const API_BASE = 'YOUR_WORKER_URL_HERE'; // 例如: https://fitcircle-api.youraccount.workers.dev
 
 // 檢查 API_BASE 是否已設定
 if (API_BASE === 'YOUR_WORKER_URL_HERE' || !API_BASE || API_BASE.trim() === '') {
@@ -14,6 +14,9 @@ let currentRole = 'admin';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('✅ DOM Content Loaded');
+    console.log('API_BASE:', API_BASE);
+    
     // Check if already logged in
     const token = localStorage.getItem('fitcircle_token');
     if (token) {
@@ -26,16 +29,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Login form handler
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+        console.log('✅ Login form event listener attached');
+    } else {
+        console.error('❌ Login form not found!');
+    }
 });
 
 // Login Handler
 async function handleLogin(e) {
+    console.log('🔐 Login button clicked');
     e.preventDefault();
+    
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorDiv = document.getElementById('login-error');
     const loginBtn = document.getElementById('login-btn');
+
+    console.log('Email:', email);
+    console.log('API_BASE:', API_BASE);
 
     errorDiv.textContent = '';
     loginBtn.disabled = true;
@@ -47,13 +61,18 @@ async function handleLogin(e) {
             throw new Error('API URL 尚未設定！請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Cloudflare Worker URL');
         }
 
-        const response = await fetch(`${API_BASE}/api/login`, {
+        const loginUrl = `${API_BASE}/api/login`;
+        console.log('🌐 Calling login API:', loginUrl);
+
+        const response = await fetch(loginUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ email, password }),
         });
+
+        console.log('📡 Response status:', response.status);
 
         // 檢查網路錯誤
         if (!response.ok) {
@@ -62,6 +81,7 @@ async function handleLogin(e) {
         }
 
         const data = await response.json();
+        console.log('✅ Login successful:', data);
 
         // Store token and user
         window._fitcircleToken = data.token;
@@ -70,14 +90,16 @@ async function handleLogin(e) {
         localStorage.setItem('fitcircle_user', JSON.stringify(data.user));
 
         // Show app
+        console.log('🎉 Showing app...');
         showApp();
     } catch (error) {
         // 顯示更詳細的錯誤訊息
+        console.error('❌ Login error:', error);
         let errorMessage = error.message;
         
         // 如果是網路錯誤
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMessage = '無法連接到伺服器。請檢查：\n1. API URL 是否正確設定\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常';
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('fetch')) {
+            errorMessage = '無法連接到伺服器。請檢查：\n1. API URL 是否正確：' + API_BASE + '\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常\n\n請在瀏覽器開啟以下 URL 測試：\n' + API_BASE;
         }
         
         // 如果是 URL 格式錯誤
@@ -86,7 +108,7 @@ async function handleLogin(e) {
         }
         
         errorDiv.textContent = errorMessage;
-        console.error('登入錯誤:', error);
+        errorDiv.style.whiteSpace = 'pre-line'; // 允許換行顯示
     } finally {
         loginBtn.disabled = false;
         loginBtn.textContent = '登入';
@@ -187,6 +209,11 @@ function openScreen(screenId) {
 
 // API Helper
 async function apiCall(endpoint, options = {}) {
+    // 檢查 API_BASE 是否已設定
+    if (API_BASE === 'YOUR_WORKER_URL_HERE' || !API_BASE || API_BASE.trim() === '') {
+        throw new Error('API URL 尚未設定！請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Cloudflare Worker URL（例如：https://fitcircle-backend1.wangserena1960.workers.dev）');
+    }
+
     const url = `${API_BASE}${endpoint}`;
     const headers = {
         'Content-Type': 'application/json',
@@ -197,17 +224,31 @@ async function apiCall(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${window._fitcircleToken}`;
     }
 
-    const response = await fetch(url, {
-        ...options,
-        headers,
-    });
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers,
+        });
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(error.error || `HTTP ${response.status}`);
+        // 檢查網路錯誤
+        if (!response.ok) {
+            let errorData;
+            try {
+                errorData = await response.json();
+            } catch (e) {
+                errorData = { error: `HTTP ${response.status} 錯誤` };
+            }
+            throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        // 提供更詳細的錯誤訊息
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            throw new Error(`無法連接到伺服器。請檢查：\n1. API URL 是否正確：${API_BASE}\n2. Cloudflare Worker 是否正常運作\n3. 網路連線是否正常`);
+        }
+        throw error;
     }
-
-    return response.json();
 }
 
 // Admin Dashboard
@@ -480,7 +521,14 @@ async function loadCoachClasses() {
         `).join('');
     } catch (error) {
         console.error('Failed to load coach classes:', error);
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">載入失敗: ' + error.message + '</td></tr>';
+        let errorMessage = error.message;
+        
+        // 如果是 API URL 未設定，顯示更清楚的訊息
+        if (errorMessage.includes('API URL 尚未設定')) {
+            errorMessage = '⚠️ API URL 尚未設定！\n請在 script.js 中將 YOUR_WORKER_URL_HERE 替換為您的 Worker URL';
+        }
+        
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="color: #e74c3c; white-space: pre-line;">載入失敗: ' + errorMessage + '</td></tr>';
     }
 }
 
@@ -719,4 +767,3 @@ window.handleCreateStudent = handleCreateStudent;
 window.handleCreateClass = handleCreateClass;
 window.handleLeaveDecision = handleLeaveDecision;
 window.handleCoachLeaveDecision = handleCoachLeaveDecision;
-
